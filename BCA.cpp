@@ -8,6 +8,8 @@ int n, m, res;
 vector<unordered_set<int>> preferenceList;
 vector<unordered_set<int>> conflict;
 vector<unordered_set<int>> curCourse;
+priority_queue<pair<int, int>> pq;
+vector<int> finalList;
 bool changed = false;
 
 //bool check(int teacher, int course) {
@@ -20,7 +22,7 @@ bool changed = false;
 
 bool check(int teacher, int course) {
 //    const auto& teacherCourses = curCourse[teacher];
-    for (int val : conflict[course]) {
+    for (int val: conflict[course]) {
         if (curCourse[teacher].count(val)) {
             return false;
         }
@@ -28,11 +30,12 @@ bool check(int teacher, int course) {
     return true;
 }
 
-void solve(int course) {
+void solve(int index) {
+    int course = finalList[index];
 
-    if (course > n) {
+    if (index == n) {
         int maxVal = 0;
-        for (auto it: curCourse) {
+        for (const auto &it: curCourse) {
             maxVal = max(maxVal, int(it.size()));
         }
         res = maxVal;
@@ -45,7 +48,7 @@ void solve(int course) {
 //            course exists in this teacher's preferenceList and that course is valid
             curCourse[i].insert(course);
             if (curCourse[i].size() < res) {
-                solve(course + 1);
+                solve(index + 1);
             }
             curCourse[i].erase(course);
         }
@@ -54,6 +57,8 @@ void solve(int course) {
 
 int main() {
 //    auto start = high_resolution_clock::now();
+
+
     cin >> m >> n;
 //    res = m/2+1;
     res = 6;
@@ -69,6 +74,17 @@ int main() {
             preferenceList[i].insert(input);
         }
     }
+
+    // each element of priority_queue pq  contains number of teachers can take certain course and index of this certain course
+    for (int i = 0; i <= n; ++i) {
+        if (i == 0) continue;
+        int count = 0;
+        for (const auto &teacher: preferenceList) {
+            if (teacher.count(i)) count++;
+        }
+        pq.push(make_pair(count, i));
+    }
+
     int k;
     cin >> k;
     for (int i = 0; i < k; ++i) {
@@ -78,7 +94,15 @@ int main() {
         conflict[y].emplace(x);
     }
 
-    solve(1);
+    // finalList is a vector of courses that sorted in ascending order of number of teachers can take course
+    // for example: the first element of finalList is the course that fewest teachers can take it
+    while(!pq.empty()) {
+        int index = pq.top().second;
+        finalList.insert(finalList.begin(), index);
+        pq.pop();
+    }
+
+    solve(0);
     if (changed) cout << res << endl;
     else cout << -1 << endl;
 
